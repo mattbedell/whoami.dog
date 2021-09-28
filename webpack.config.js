@@ -1,10 +1,10 @@
-const { resolve } = require('path');
+const { resolve } = require("path");
 
-const webpack = require('webpack');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require("webpack");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
-const APP_ENTRY = resolve('src', 'index.jsx');
-const EMIT_DIR = resolve('dist');
+const APP_ENTRY = resolve("src", "index.jsx");
+const EMIT_DIR = resolve("dist");
 
 const config = {
   entry: {
@@ -14,30 +14,37 @@ const config = {
     rules: [
       {
         test: /\.(js|jsx)$/i,
-        use: [{ loader: 'babel-loader' }],
+        use: [{ loader: "babel-loader" }],
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
-        type: 'asset/resource',
+        type: "asset/resource",
       },
     ],
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: 'src/index.html',
+      template: "src/index.html",
     }),
-    new webpack.HotModuleReplacementPlugin(),
   ],
   output: {
-    filename: '[name].[hash].js',
+    filename: "[name].[contenthash].js",
     path: EMIT_DIR,
-    publicPath: '/',
+    publicPath: "/",
   },
   devServer: {
-    contentBase: EMIT_DIR,
-    disableHostCheck: true,
+    historyApiFallback: true,
     hot: true,
+    proxy: {
+      "/api": "http://localhost:3001",
+    },
   },
 };
 
-module.exports = config;
+module.exports = (_serve, options) => {
+  if (options.mode === 'development') {
+   config.devtool = 'eval-source-map';
+  }
+  console.dir(config)
+  return config;
+}
