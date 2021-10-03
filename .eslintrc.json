@@ -23,6 +23,7 @@
         "no-console": "off",
         "import/extensions": "off",
         "implicit-arrow-linebreak": "off",
-        "max-len": "off"
+        "max-len": "off",
+        "no-underscore-dangle": "off"
     }
 }
