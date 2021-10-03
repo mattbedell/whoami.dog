@@ -45,6 +45,5 @@ module.exports = (_serve, options) => {
   if (options.mode === 'development') {
    config.devtool = 'eval-source-map';
   }
-  console.dir(config)
   return config;
 }
