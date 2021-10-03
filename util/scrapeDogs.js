@@ -1,6 +1,7 @@
-const fs = require('fs');
 const fetch = require("node-fetch");
 const jsdom = require("jsdom");
+require("dotenv").config();
+const { MongoClient } = require("mongodb");
 
 const { JSDOM } = jsdom;
 
@@ -8,16 +9,23 @@ const articleExpr = /\/wiki\/(.*)/;
 
 const apiQuery =
   "https://en.wikipedia.org/w/api.php?action=parse&prop=text&formatversion=2&format=json&page";
+
+const dbClient = new MongoClient(process.env.MONGO_URL);
+dbClient.connect();
+const db = dbClient.db(process.env.MONGO_DB);
+
+const replaceCitationAnnotation = (string) => string.replace(/\[(\d|\w)+\]/g, '');
+
 async function main() {
   const dogListResponse = await fetch(`${apiQuery}=List_of_dog_breeds`);
   const {
-    parse: { text: dogListData, pageid: pageId },
+    parse: { text: dogListData },
   } = await dogListResponse.json();
   const {
     window: { document: dogListDoc },
   } = new JSDOM(dogListData);
 
-  const dogs = await Array.from(
+   return Array.from(
     dogListDoc.querySelectorAll(".div-col ul li a[title]")
   ).reduce(
     (allReqs, element) =>
@@ -38,13 +46,13 @@ async function main() {
         }
 
         const {
-          parse: { text: dogArticle },
+        parse: { text: dogArticle, pageid: _id },
         } = json;
         const {
           window: { document: doc },
         } = new JSDOM(dogArticle);
 
-        const summary = doc.querySelector("p").textContent.replace(/\n$/, "");
+        const summary = doc.querySelector("p:not([class])").textContent.replace(/\n$/, "");
         const imgSrc = doc.querySelector(".infobox-image a img")?.src;
 
         const infoboxes = doc.querySelectorAll(
@@ -76,14 +84,15 @@ async function main() {
             });
         }
 
-        allDogs.push({
+        const entry = {
           href: `https://en.wikipedia.com${href}`,
           title,
-          summary,
-          id: pageId,
-          traits,
+          summary: replaceCitationAnnotation(summary),
+          traits: traits.map(({ value, ...trait}) => ({ ...trait, value: replaceCitationAnnotation(value) })),
           imgSrc,
-        });
+        };
+
+        await db.collection('breeds').updateOne({ _id }, { $setOnInsert: entry }, { upsert: true })
 
         // slow it down so we don't get rate limited
         return new Promise((resolve) => {
@@ -94,13 +103,6 @@ async function main() {
       }),
     Promise.resolve([])
   ).catch((e) => console.error(e));
-
-  // pop it in util now
-  fs.writeFile('./util/dogs.json', JSON.stringify(dogs), (err) => {
-    if (err) {
-      console.error(err);
-    }
-  });
 }
 
 main();
