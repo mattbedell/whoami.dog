@@ -41,7 +41,7 @@ const authSessionMiddleware = (req, res, next) => {
     return next();
   }
 
-  return res.status(403).send();
+  return res.redirect(403, '/login');
 };
 
 const validateGuessMiddleware = (req, res, next) => {
@@ -131,12 +131,28 @@ api.post("/auth", async (req, res) => {
 
     if (passwordMatch) {
       req.session.username = user.username;
+      // TODO: hydrate guesses does another lookup of user, make the fn more universal by extracting out that db lookup
       return res.status(200).send({ username: user.username });
     }
   }
 
   return res.status(404).json({ error: "Incorrect username or password" });
 });
+
+api.get(
+  "/guesses",
+  authSessionMiddleware,
+  async (req, res) => {
+    const user = await db.collection("users").findOne({ username: req.session.username })
+
+    if (user) {
+      const guesses = await hydrateGuesses(user.username, user.guesses.map(({ _id }) => _id.toString()));
+      return res.status(200).send(guesses);
+    }
+
+    return res.sendStatus(404);
+  }
+)
 
 // TODO: do some CSRF protection on these routes
 api.post(
