@@ -24,6 +24,7 @@
         "import/extensions": "off",
         "implicit-arrow-linebreak": "off",
         "max-len": "off",
-        "no-underscore-dangle": "off"
+        "no-underscore-dangle": "off",
+        "react/prop-types": "off"
     }
 }
