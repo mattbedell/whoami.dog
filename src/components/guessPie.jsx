@@ -6,6 +6,7 @@ import {
   lightBlue,
   amber,
   blueGrey,
+  grey,
 } from "@mui/material/colors";
 import { Pie } from "react-chartjs-2";
 
@@ -20,9 +21,9 @@ const colors = [
 export const getLegendColor = (guessIndex, entryIndex) =>
   colors[(guessIndex + entryIndex) % colors.length];
 
-const generateChartData = (guess, guessIdx) => {
+const generateChartData = (entries, guessIdx, remainingGuess) => {
   const labels = [];
-  const generatedDataset = guess.entries.reduce(
+  const generatedDataset = entries.reduce(
     (dataset, entry, i) => {
       const color = getLegendColor(guessIdx, i);
       dataset.data.push(entry.percentage);
@@ -40,21 +41,39 @@ const generateChartData = (guess, guessIdx) => {
     }
   );
 
+  generatedDataset.data.push(remainingGuess);
+  generatedDataset.backgroundColor.push(grey[200]);
+  generatedDataset.borderColor.push(grey[200]);
+  labels.push("Unknown");
+
   return {
     labels,
     datasets: [generatedDataset],
   };
 };
 
-const GuessPie = forwardRef(({ guess, guessIndex = 0 }, ref) => {
-  const data = generateChartData(guess, guessIndex);
-  return (
-    <Pie
-      ref={ref}
-      data={data}
-      options={{ plugins: { legend: { display: false } } }}
-    />
-  );
-});
+const GuessPie = forwardRef(
+  ({ entries = [], guessIndex = 0, remainingGuess = 0 }, ref) => {
+    const data = generateChartData(entries, guessIndex, remainingGuess);
+    return (
+      <Pie
+        ref={ref}
+        data={data}
+        options={{
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              callbacks: {
+                label: (tooltipItem) => `${tooltipItem.label}: ${tooltipItem.parsed}%`,
+              },
+            },
+          },
+        }}
+      />
+    );
+  }
+);
 
 export default GuessPie;
