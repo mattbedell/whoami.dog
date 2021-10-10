@@ -14,6 +14,7 @@ import Box from "@mui/material/Box";
 
 import useFetch from "../hooks/useFetch.js";
 import GuessPie, { getLegendColor } from "./guessPie.jsx";
+import SearchBreeds from "./searchBreeds.jsx";
 
 const CustomSlider = styled(Slider)(() => ({
   "& .MuiSlider-mark": {
@@ -73,7 +74,7 @@ export const GuessEntry = ({
   );
 };
 
-const Guess = ({ guess, guessIndex, chartRef }) => {
+const Guess = ({ guess, guessIndex, chartRef, breeds }) => {
   const theme = useTheme();
   const [entries, setEntries] = useState(guess.entries);
 
@@ -102,6 +103,7 @@ const Guess = ({ guess, guessIndex, chartRef }) => {
       variant="outlined"
       sx={{ padding: "15px", backgroundColor: theme.palette.grey[100] }}
     >
+      <SearchBreeds breeds={breeds} />
       <Stack direction="row" spacing={2}>
         <Box
           sx={{

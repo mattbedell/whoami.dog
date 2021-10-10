@@ -20,9 +20,7 @@ import useFetch from "../hooks/useFetch.js";
 // import { useUser } from "../util/userContext.jsx";
 
 import GuessPie, { getLegendColor } from "./guessPie.jsx";
-import Guess from './guess.jsx';
-
-
+import Guess from "./guess.jsx";
 
 const UserDashboard = () => {
   const [chartRefs, setChartRefs] = useState([]);
@@ -31,8 +29,10 @@ const UserDashboard = () => {
     `/api/guesses`,
     { redirect: "follow" },
     { doRequest: true },
-    [],
+    []
   );
+
+  const [{ data: breeds }] = useFetch(`/api/breeds`, {}, { doRequest: true }, []);
 
   const [guesses, setGuesses] = useState(data);
 
@@ -55,6 +55,7 @@ const UserDashboard = () => {
           guess={guess}
           guessIndex={guessIndex}
           chartRef={chartRefs[guessIndex]}
+          breeds={breeds}
         />
       ))}
     </Stack>
