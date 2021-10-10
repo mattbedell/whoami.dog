@@ -47,7 +47,7 @@ const authSessionMiddleware = (req, res, next) => {
 const validateGuessMiddleware = (req, res, next) => {
   const { guess } = req.body;
 
-  if (guess.reduce((all, { percentage }) => all + percentage, 0) <= 100) {
+  if (guess.entries.reduce((all, { percentage }) => all + percentage, 0) <= 100) {
     next();
   } else {
     res.status(400).send("only one whole dog allowed per guess");
@@ -81,7 +81,7 @@ const hydrateGuesses = async (username, guessIds) => {
             if (keyExists) {
               const breedStr = await redisClient.get(breedCacheKey);
               const breed = JSON.parse(breedStr);
-              return { ...breed, percentage };
+              return { ...breed, percentage, breedId };
             }
 
             const breed = await db
@@ -89,7 +89,7 @@ const hydrateGuesses = async (username, guessIds) => {
               .findOne({ _id: breedId });
 
             await redisClient.set(breedCacheKey, JSON.stringify(breed));
-            return { ...breed, percentage };
+            return { ...breed, percentage, breedId };
           })
         );
         // eslint-disable-next-line
@@ -107,7 +107,7 @@ app.get("/", (_, res) => {
   res.send(path.join(__dirname, "dist", "index.html"));
 });
 
-app.use(express.static(path.join(__dirname, "..", "public")));
+app.use('/public', express.static(path.join(__dirname, "..", "public")));
 app.use(
   "/data",
   authSessionMiddleware,
@@ -172,7 +172,7 @@ api.post(
         {
           $push: {
             guesses: {
-              entries: guess.map(({ breedId, percentage }) => ({
+              entries: guess.entries.map(({ breedId, percentage }) => ({
                 breedId,
                 percentage,
               })),
@@ -204,14 +204,15 @@ api.put(
           "guesses._id": ObjectId(req.params.id),
         },
         {
-          $set: { "guesses.$.entries": guess },
+          $set: { "guesses.$.entries": guess.entries.map(({ breedId, percentage }) => ({ breedId, percentage })) },
         }
       );
       const [updatedGuess] = await hydrateGuesses(req.session.username, [
         req.params.id,
       ]);
       res.json(updatedGuess);
-    } catch {
+    } catch(e) {
+      console.log(e)
       res.sendStatus(400);
     }
   }
