@@ -37,6 +37,7 @@ const config = {
     hot: true,
     proxy: {
       "/api": "http://localhost:3001",
+      "/public": "http://localhost:3001",
     },
   },
 };
