@@ -1,4 +1,5 @@
 const path = require("path");
+const { pipeline } = require("stream/promises");
 
 const express = require("express");
 const morgan = require("morgan");
@@ -244,6 +245,28 @@ api.delete("/guess/:id", authSessionMiddleware, async (req, res) => {
   } finally {
     res.send();
   }
+});
+
+api.get("/breeds", authSessionMiddleware, async (req, res) => {
+  await pipeline(
+    db.collection("breeds").find().project({ title: 1 }).stream(),
+    async function* transform(read) {
+      let first = true;
+      yield "[";
+      // eslint-disable-next-line no-restricted-syntax
+      for await (const doc of read) {
+        if (first) {
+          first = false;
+        } else {
+          yield ','
+        }
+        yield JSON.stringify(doc);
+      }
+
+      yield "]";
+    },
+    res.type("json"),
+  );
 });
 
 api.get("/u/:username", async (req, res) => {
