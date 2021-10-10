@@ -42,13 +42,15 @@ const authSessionMiddleware = (req, res, next) => {
     return next();
   }
 
-  return res.redirect(403, '/login');
+  return res.redirect(403, "/login");
 };
 
 const validateGuessMiddleware = (req, res, next) => {
   const { guess } = req.body;
 
-  if (guess.entries.reduce((all, { percentage }) => all + percentage, 0) <= 100) {
+  if (
+    guess.entries.reduce((all, { percentage }) => all + percentage, 0) <= 100
+  ) {
     next();
   } else {
     res.status(400).send("only one whole dog allowed per guess");
@@ -108,12 +110,7 @@ app.get("/", (_, res) => {
   res.send(path.join(__dirname, "dist", "index.html"));
 });
 
-app.use('/public', express.static(path.join(__dirname, "..", "public")));
-app.use(
-  "/data",
-  authSessionMiddleware,
-  express.static(path.join(__dirname, "..", "data"))
-);
+app.use("/public", express.static(path.join(__dirname, "..", "public")));
 
 // TODO: do some CSRF protection on these routes
 api.post("/auth", async (req, res) => {
@@ -140,20 +137,21 @@ api.post("/auth", async (req, res) => {
   return res.status(404).json({ error: "Incorrect username or password" });
 });
 
-api.get(
-  "/guesses",
-  authSessionMiddleware,
-  async (req, res) => {
-    const user = await db.collection("users").findOne({ username: req.session.username })
+api.get("/guesses", authSessionMiddleware, async (req, res) => {
+  const user = await db
+    .collection("users")
+    .findOne({ username: req.session.username });
 
-    if (user) {
-      const guesses = await hydrateGuesses(user.username, user.guesses.map(({ _id }) => _id.toString()));
-      return res.status(200).send(guesses);
-    }
-
-    return res.sendStatus(404);
+  if (user) {
+    const guesses = await hydrateGuesses(
+      user.username,
+      user.guesses.map(({ _id }) => _id.toString())
+    );
+    return res.status(200).send(guesses);
   }
-)
+
+  return res.sendStatus(404);
+});
 
 // TODO: do some CSRF protection on these routes
 api.post(
@@ -205,15 +203,19 @@ api.put(
           "guesses._id": ObjectId(req.params.id),
         },
         {
-          $set: { "guesses.$.entries": guess.entries.map(({ breedId, percentage }) => ({ breedId, percentage })) },
+          $set: {
+            "guesses.$.entries": guess.entries.map(
+              ({ breedId, percentage }) => ({ breedId, percentage })
+            ),
+          },
         }
       );
       const [updatedGuess] = await hydrateGuesses(req.session.username, [
         req.params.id,
       ]);
       res.json(updatedGuess);
-    } catch(e) {
-      console.log(e)
+    } catch (e) {
+      console.log(e);
       res.sendStatus(400);
     }
   }
@@ -258,14 +260,14 @@ api.get("/breeds", authSessionMiddleware, async (req, res) => {
         if (first) {
           first = false;
         } else {
-          yield ','
+          yield ",";
         }
         yield JSON.stringify(doc);
       }
 
       yield "]";
     },
-    res.type("json"),
+    res.type("json")
   );
 });
 
