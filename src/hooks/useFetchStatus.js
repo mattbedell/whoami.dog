@@ -28,7 +28,4 @@ const reducer = (state, newState) => {
   return { error, loading, done };
 }
 
-export default (initialState = defaultStatusState) => {
-  const [status, dispatch] = useReducer(reducer, { ...defaultStatusState, ...initialState});
-  return [status, dispatch];
-}
+export default (initialState = defaultStatusState) => useReducer(reducer, { ...defaultStatusState, ...initialState});
