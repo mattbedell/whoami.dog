@@ -79,7 +79,7 @@ const Guess = ({ guess, guessIndex, chartRef, breeds }) => {
   const [entries, setEntries] = useState(guess.entries);
 
   const [{ data, status }, putGuessEntries] = useFetch(
-    `/api/guess/${guess._id}`,
+    `${WAID_API}/guess/${guess._id}`,
     {
       method: "PUT",
       headers: {

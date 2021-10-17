@@ -32,7 +32,7 @@ const UserDashboard = () => {
     []
   );
 
-  const [{ data: breeds }] = useFetch(`/api/breeds`, {}, { doRequest: true }, []);
+  const [{ data: breeds }] = useFetch(`${WAID_API}/breeds`, {}, { doRequest: true }, []);
 
   const [guesses, setGuesses] = useState(data);
 

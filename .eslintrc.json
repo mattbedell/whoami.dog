@@ -20,6 +20,9 @@
     "plugins": [
         "react"
     ],
+    "globals": {
+      "WAID_API": "readonly"
+    },
     "rules": {
         "no-console": "off",
         "import/extensions": "off",

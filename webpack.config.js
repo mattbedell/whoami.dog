@@ -1,5 +1,6 @@
 const { resolve } = require("path");
 
+require("dotenv").config();
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
@@ -25,6 +26,9 @@ const config = {
   plugins: [
     new HtmlWebpackPlugin({
       template: "src/index.html",
+    }),
+    new webpack.DefinePlugin({
+      'WAID_API': JSON.stringify(process.env.WAID_API),
     }),
   ],
   output: {

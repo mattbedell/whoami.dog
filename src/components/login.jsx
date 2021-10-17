@@ -28,7 +28,7 @@ const Login = () => {
     const formData = new FormData(e.currentTarget);
 
     setStatus({ loading: true });
-    const response = await fetch('/api/auth', {
+    const response = await fetch(`${WAID_API}/auth`, {
       method: 'POST',
       body: JSON.stringify(Object.fromEntries(formData)),
       headers: {
