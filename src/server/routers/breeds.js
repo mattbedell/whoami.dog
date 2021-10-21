@@ -29,4 +29,12 @@ router.get("/", authMiddleware.session, async (req, res) => {
   );
 });
 
+router.get("/:breedId", authMiddleware.session, async (req, res) => {
+  const breed = await db.collection("breeds").findOne({ _id: parseInt(req.params.breedId, 10) });
+  if (breed) {
+    return res.json(breed);
+  }
+  return res.sendStatus(404);
+});
+
 module.exports = router;
