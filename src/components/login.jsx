@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import { useHistory } from 'react-router-dom';
 import Container from "@mui/material/Container";
@@ -16,39 +16,27 @@ import Alert from "@mui/material/Alert";
 // import Grid from "@mui/material/Grid";
 
 import useFetchStatus from '../hooks/useFetchStatus.js';
+import { WAIDApi as api } from '../state/api.js';
 
 
 // eslint-disable-next-line
 const Login = () => {
   const history = useHistory();
-  const [status, setStatus] = useFetchStatus();
-  const [errMsg, setErrMsg] = useState("We can't log you in right now");
+  const [formCreds, setFormCreds] = useState({ username: '', password: '' });
+  const [authUser, { isLoading, isSuccess, isError, error, data }] = api.endpoints.authUser.useMutation();
+
+  const handleFormChange = (e) => setFormCreds({ ...formCreds, [e.target.name]: e.target.value});
+  useEffect(() => {
+    if (isSuccess) {
+      history.push(`/users/${data.username}/dashboard`);
+    }
+  }, [isSuccess]);
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-
-    setStatus({ loading: true });
-    const response = await fetch(`${WAID_API}/auth`, {
-      method: 'POST',
-      body: JSON.stringify(Object.fromEntries(formData)),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (response.ok) {
-      setStatus({ done: true });
-      const data = await response.json();
-      history.push(`/u/${data.username}/dashboard`);
-    } else {
-      try {
-        const data = await response.json();
-        setErrMsg(data.error);
-      } catch (_e) {
-        //
-      } finally {
-        setStatus({ error: true });
-      }
+    try {
+      await authUser(formCreds).unwrap();
+    } catch {
+      setFormCreds({...formCreds, password: '' });
     }
   }
   return (
@@ -69,17 +57,19 @@ const Login = () => {
           Sign in
         </Typography>
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-        { status.error && <Alert severity="error">{errMsg}</Alert>}
+          { isError && <Alert severity="error">{error.data}</Alert> }
           <TextField
             margin="normal"
-            required
             fullWidth
             id="email"
             label="Email Address"
             name="username"
             autoComplete="email"
+            required
             autoFocus
-            disabled={status.loading}
+            value={formCreds.username}
+            onChange={handleFormChange}
+            disabled={isLoading}
           />
           <TextField
             margin="normal"
@@ -89,15 +79,16 @@ const Login = () => {
             label="Password"
             type="password"
             id="password"
-            autoComplete="current-password"
-            disabled={status.loading}
+            value={formCreds.password}
+            onChange={handleFormChange}
+            disabled={isLoading}
           />
           <Button
             type="submit"
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
-            disabled={status.loading}
+            disabled={isLoading}
           >
             Sign In
           </Button>

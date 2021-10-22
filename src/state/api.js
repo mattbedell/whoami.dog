@@ -4,8 +4,12 @@ export const WAIDApi = createApi({
   reducerPath: "WAIDApi",
   baseQuery: fetchBaseQuery({ baseUrl: WAID_API }),
   endpoints: (builder) => ({
-    authUser: builder.query({
-      query: () => "/users/auth",
+    authUser: builder.mutation({
+    query: (credentials) => ({
+        url: "/users/auth",
+        method: "POST",
+        body: credentials,
+      }),
     }),
     getBreedList: builder.query({
       query: () => "breeds",
