@@ -40,7 +40,7 @@ router.post("/auth", async (req, res) => {
 
     if (passwordMatch) {
       req.session.username = user.username;
-      return res.status(200).send({ username: user.username });
+      return res.status(200).send({ username: user.username, name: user.name });
     }
   }
 
@@ -51,6 +51,16 @@ router.use(authMiddleware.session);
 
 // username param isn't necessary in these routes, but it looks nicer. The username is obtained from the signed session cookie. This auth function is also not really necessary either
 router.param("username", authMiddleware.userWritable);
+
+router.get("/:username/guesses", async (req, res) => {
+  const { guesses } = await db
+    .collection("users")
+    .findOne({
+      username: req.session.username,
+    });
+
+  res.json(guesses);
+});
 
 // TODO: routes need CSRF protection
 
