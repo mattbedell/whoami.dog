@@ -11,10 +11,17 @@ import Typography from "@mui/material/Typography";
 import Slider from "@mui/material/Slider";
 import CardActions from "@mui/material/CardActions";
 import Box from "@mui/material/Box";
+import { Popper, Paper, Fade } from '@mui/material';
+import {
+  usePopupState,
+  bindPopper,
+  bindHover,
+} from "material-ui-popup-state/hooks";
 
 import useFetch from "../hooks/useFetch.js";
 import GuessPie, { getLegendColor } from "./guessPie.jsx";
 import SearchBreeds from "./searchBreeds.jsx";
+
 
 const CustomSlider = styled(Slider)(() => ({
   "& .MuiSlider-mark": {
@@ -35,6 +42,10 @@ export const GuessEntry = ({
   remainingGuess,
 }) => {
   const [percentage] = useState(entry.percentage);
+  const popupState = usePopupState({
+    variant: "popper",
+    popupId: `li-breed-${entry.breedId}`,
+  });
 
   return (
     <Grid
@@ -47,7 +58,7 @@ export const GuessEntry = ({
       onPointerEnter={onMouseEnter}
       onPointerLeave={onMouseLeave}
     >
-      <Card sx={{ display: "flex", flexDirection: "column" }}>
+      <Card sx={{ display: "flex", flexDirection: "column" }} {...bindHover(popupState)}>
         <CardMedia component="img" image={entry.imgSrc} />
         <CardContent sx={{ flexGrow: 1 }}>
           <Typography gutterBottom variant="h5" component="h2">
@@ -70,6 +81,15 @@ export const GuessEntry = ({
           />
         </CardActions>
       </Card>
+      <Popper {...bindPopper(popupState)} transition>
+        {({ TransitionProps }) => (
+          <Fade {...TransitionProps} timeout={350}>
+            <Paper>
+              <Typography sx={{ p: 2 }}>The content of the Popper.</Typography>
+            </Paper>
+          </Fade>
+        )}
+      </Popper>
     </Grid>
   );
 };
