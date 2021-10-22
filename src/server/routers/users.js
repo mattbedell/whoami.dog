@@ -44,7 +44,7 @@ router.post("/auth", async (req, res) => {
     }
   }
 
-  return res.status(404).json({ error: "Incorrect username or password" });
+  return res.status(403).json("Incorrect username or password");
 });
 
 router.use(authMiddleware.session);
