@@ -28,7 +28,7 @@ const Login = () => {
   const handleFormChange = (e) => setFormCreds({ ...formCreds, [e.target.name]: e.target.value});
   useEffect(() => {
     if (isSuccess) {
-      history.push(`/users/${data.username}/dashboard`);
+      history.push(`/u/${data.username}/dashboard`);
     }
   }, [isSuccess]);
   const handleSubmit = async (e) => {
