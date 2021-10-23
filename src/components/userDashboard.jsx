@@ -1,63 +1,38 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 
-import { useLocation, useHistory } from "react-router-dom";
-import { useTheme } from "@mui/material/styles";
-import Container from "@mui/material/Container";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import Paper from "@mui/material/Paper";
-import Card from "@mui/material/Card";
-import Grid from "@mui/material/Grid";
-import CardContent from "@mui/material/CardContent";
-import CardMedia from "@mui/material/CardMedia";
-import CardActions from "@mui/material/CardActions";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-import Slider from "@mui/material/Slider";
+import { Stack } from "@mui/material";
 
-import useFetchStatus from "../hooks/useFetchStatus.js";
-import useFetch from "../hooks/useFetch.js";
-// import { useUser } from "../util/userContext.jsx";
+import api from "../state/api.js";
+import { useAuth } from "../state/auth.js";
 
-import GuessPie, { getLegendColor } from "./guessPie.jsx";
 import Guess from "./guess.jsx";
 
 const UserDashboard = () => {
   const [chartRefs, setChartRefs] = useState([]);
-  const history = useHistory();
-  const [{ data, statusCode }] = useFetch(
-    `/api/guesses`,
-    { redirect: "follow" },
-    { doRequest: true },
-    []
-  );
+  const { username } = useAuth();
+  const { data: breeds = [] } = api.endpoints.getBreedList.useQuery();
 
-  const [{ data: breeds }] = useFetch(`${WAID_API}/breeds`, {}, { doRequest: true }, []);
-
-  const [guesses, setGuesses] = useState(data);
+  const { data: guesses, isSuccess } =
+    api.endpoints.getUserGuesses.useQuery(username);
 
   useEffect(() => {
-    setGuesses(data);
-    setChartRefs(data.map(() => React.createRef()));
-  }, [data]);
-
-  // TODO: this could be abstracted better, add redirect to here after login
-  // ex /login?redirect=/this/url
-  if (statusCode === 403) {
-    history.push("/login");
-  }
+    setChartRefs(guesses?.map(() => React.createRef()) || []);
+  }, [guesses]);
 
   return (
     <Stack spacing={4} sx={{ padding: "20px" }}>
-      {guesses.slice(0, 1).map((guess, guessIndex) => (
-        <Guess
-          key={`guess-${guess._id}`}
-          guess={guess}
-          guessIndex={guessIndex}
-          chartRef={chartRefs[guessIndex]}
-          breeds={breeds}
-        />
-      ))}
+      {isSuccess &&
+        guesses
+          .slice(0, 1)
+          .map((guess, guessIndex) => (
+            <Guess
+              key={`guess-${guess._id}`}
+              guessId={guess._id}
+              guessIndex={guessIndex}
+              chartRef={chartRefs[guessIndex]}
+              breeds={breeds}
+            />
+          ))}
     </Stack>
   );
 };
