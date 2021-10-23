@@ -1,8 +1,8 @@
 const validateGuessPercentage = (req, res, next) => {
-  const { guess } = req.body;
+  const { entries } = req.body;
 
   if (
-    guess.entries.reduce((all, { percentage }) => all + percentage, 0) <= 100
+    entries.reduce((all, { percentage }) => all + percentage, 0) <= 100
   ) {
     next();
   } else {

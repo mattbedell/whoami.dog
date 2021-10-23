@@ -93,7 +93,7 @@ router.put(
   "/:username/guesses/:guessId",
   validateGuessPercentage,
   async (req, res) => {
-    const { guess } = req.body;
+    const { entries } = req.body;
     try {
       await db.collection("users").updateOne(
         {
@@ -102,7 +102,7 @@ router.put(
         },
         {
           $set: {
-            "guesses.$.entries": guess.entries.map(
+            "guesses.$.entries": entries.map(
               ({ breedId, percentage }) => ({ breedId, percentage })
             ),
           },

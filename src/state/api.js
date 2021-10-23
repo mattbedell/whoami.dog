@@ -5,7 +5,7 @@ export const WAIDApi = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: WAID_API }),
   endpoints: (builder) => ({
     authUser: builder.mutation({
-    query: (credentials) => ({
+      query: (credentials) => ({
         url: "/users/auth",
         method: "POST",
         body: credentials,
@@ -26,17 +26,15 @@ export const WAIDApi = createApi({
         { type: "Guesses", id: "LIST" },
       ],
     }),
-    getUserGuess: builder.query({
-      query: ({ username, guessId }) => `users/${username}/guesses/${guessId}`,
-      providesTags: (_res, _err, { guessId: id }) => [{ type: "Guesses", id }],
-    }),
     updateUserGuess: builder.mutation({
-      query: ({ _id, username, ...rest }) => ({
-        url: `users/${username}/guesses/${_id}`,
+      query: ({ username, guessId, entries }) => ({
+        url: `users/${username}/guesses/${guessId}`,
         method: "PUT",
-        body: rest,
+        body: { entries },
       }),
       invalidatesTags: (_res, _err, { _id: id }) => [{ type: "Guesses", id }],
     }),
   }),
 });
+
+export default WAIDApi;
