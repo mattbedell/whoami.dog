@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 
 import { useTheme, styled } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
@@ -11,17 +12,12 @@ import Typography from "@mui/material/Typography";
 import Slider from "@mui/material/Slider";
 import CardActions from "@mui/material/CardActions";
 import Box from "@mui/material/Box";
-import { Popper, Paper, Fade } from '@mui/material';
-import {
-  usePopupState,
-  bindPopper,
-  bindHover,
-} from "material-ui-popup-state/hooks";
 
-import useFetch from "../hooks/useFetch.js";
-import GuessPie, { getLegendColor } from "./guessPie.jsx";
+import api from "../state/api.js";
+import { useAuth } from "../state/auth.js";
+import { useGuessEntries, actions as guessActions } from "../state/guesses";
+import GuessPie from "./guessPie.jsx";
 import SearchBreeds from "./searchBreeds.jsx";
-
 
 const CustomSlider = styled(Slider)(() => ({
   "& .MuiSlider-mark": {
@@ -37,20 +33,16 @@ export const GuessEntry = ({
   handleChange = () => {},
   onMouseEnter,
   onMouseLeave,
+  onPointerUp = () => {},
   sliderEnabled,
-  saveEntries,
   remainingGuess,
 }) => {
   const [percentage] = useState(entry.percentage);
-  const popupState = usePopupState({
-    variant: "popper",
-    popupId: `li-breed-${entry.breedId}`,
-  });
 
   return (
     <Grid
       item
-      key={`guess-entry-${entry._id}`}
+      key={`guess-entry-${entry.breedId}`}
       xs={12}
       sm={6}
       md={6}
@@ -58,7 +50,7 @@ export const GuessEntry = ({
       onPointerEnter={onMouseEnter}
       onPointerLeave={onMouseLeave}
     >
-      <Card sx={{ display: "flex", flexDirection: "column" }} {...bindHover(popupState)}>
+      <Card sx={{ display: "flex", flexDirection: "column" }}>
         <CardMedia component="img" image={entry.imgSrc} />
         <CardContent sx={{ flexGrow: 1 }}>
           <Typography gutterBottom variant="h5" component="h2">
@@ -75,51 +67,41 @@ export const GuessEntry = ({
             onChange={handleChange}
             disabled={!sliderEnabled}
             marks={[{ value: entry.percentage + remainingGuess }]}
-            onPointerUp={() => {
-              saveEntries();
-            }}
+            onPointerUp={onPointerUp}
           />
         </CardActions>
       </Card>
-      <Popper {...bindPopper(popupState)} transition>
-        {({ TransitionProps }) => (
-          <Fade {...TransitionProps} timeout={350}>
-            <Paper>
-              <Typography sx={{ p: 2 }}>The content of the Popper.</Typography>
-            </Paper>
-          </Fade>
-        )}
-      </Popper>
     </Grid>
   );
 };
 
-const Guess = ({ guess, guessIndex, chartRef, breeds }) => {
+const Guess = ({ guessId, guessIndex, chartRef, breeds }) => {
   const theme = useTheme();
-  const [entries, setEntries] = useState(guess.entries);
+  const dispatch = useDispatch();
+  const { username } = useAuth();
+  const entries = useGuessEntries(guessId);
 
-  const [{ data, status }, putGuessEntries] = useFetch(
-    `${WAID_API}/guess/${guess._id}`,
+  const [updateEntries, { isLoading: isUpdateLoading, isError, error }] =
+    api.endpoints.updateUserGuess.useMutation();
+
+  const { isFetching: isGuessFetching } = api.endpoints.getUserGuesses.useQuery(
+    username,
     {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      selectFromResult: ({ data, ...rest }) => ({
+        data: data?.find(({ _id }) => _id === guessId),
+        ...rest,
+      }),
     }
   );
 
-  const saveEntries = useCallback(() => {
-    putGuessEntries({ body: JSON.stringify({ guess: { ...guess, entries: entries.map(({ breedId, percentage }) => ({ breedId, percentage })) } }) });
-  }, [entries, guess, putGuessEntries]);
-
   const remainingGuess = Math.max(
-    entries.reduce((remaining, entry) => remaining - entry.percentage, 100),
+    entries?.reduce((remaining, entry) => remaining - entry.percentage, 100),
     0
   );
 
   return (
     <Container
-      key={`guess-${guess._id}`}
+      key={`guess-${guessId}`}
       variant="outlined"
       sx={{ padding: "15px", backgroundColor: theme.palette.grey[100] }}
     >
@@ -146,28 +128,23 @@ const Guess = ({ guess, guessIndex, chartRef, breeds }) => {
           <Grid container spacing={4}>
             {entries.map((entry, entryIndex) => (
               <GuessEntry
-                key={`entry-${entry._id}`}
+                key={`entry-${guessId}-${entry.breedId}`}
                 entry={entry}
-                sliderEnabled={!status.loading}
-                saveEntries={saveEntries}
+                sliderEnabled={!(isGuessFetching || isUpdateLoading)}
                 remainingGuess={remainingGuess}
                 handleChange={(e) => {
-                  let remaining = 100;
-                  const newEntries = entries.map((uEntry, i) => {
-                    let newEntry = uEntry;
-                    if (i === entryIndex) {
-                      newEntry = { ...uEntry, percentage: e.target.value };
-                    }
-                    remaining -= newEntry.percentage;
-                    return newEntry;
-                  });
-
-                  if (remaining < 0) {
+                  if (remainingGuess + entry.percentage - e.target.value < 0) {
                     return;
                   }
 
-                  setEntries(newEntries);
                   chartRef.current.tooltip.update();
+                  dispatch(
+                    guessActions.updateEntry({
+                      entry: { ...entry, percentage: e.target.value },
+                      guessId,
+                      entryIndex,
+                    })
+                  );
                 }}
                 onMouseEnter={() => {
                   const chart = chartRef.current;
@@ -186,6 +163,9 @@ const Guess = ({ guess, guessIndex, chartRef, breeds }) => {
                   chart.setActiveElements([]);
                   tooltip.setActiveElements([]);
                   chart.update();
+                }}
+                onPointerUp={() => {
+                  updateEntries({ username, guessId, entries });
                 }}
               />
             ))}
