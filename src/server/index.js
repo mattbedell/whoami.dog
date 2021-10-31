@@ -7,6 +7,7 @@ const helmet = require("helmet");
 require("dotenv").config();
 const cookieSession = require("cookie-session");
 
+const { expires } = require("./utils/session.js");
 const apiRouter = require("./routers/api.js");
 
 const PORT = process.env.PORT || 3001;
@@ -16,15 +17,13 @@ const app = express();
 app.use(morgan("dev"));
 app.use(helmet());
 
-// expire the session cookie in a year, this would typically be much shorter but this an app about a dog so convenience is appropriate
-const sessionExpiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 app.use(
   cookieSession({
     name: "session",
     secret: process.env.SESSION_SECRET,
     httpOnly: true,
     sameSite: "lax",
-    expires: sessionExpiryDate,
+    expires,
   })
 );
 

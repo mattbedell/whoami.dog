@@ -2,6 +2,7 @@ const express = require("express");
 const { ObjectId } = require("mongodb");
 const bcrypt = require("bcrypt");
 
+const { expires } = require("../utils/session.js");
 const { mongoDb: db } = require("../services/db.js");
 const authMiddleware = require("../middleware/auth.js");
 const { validateGuessPercentage } = require("../middleware/util.js");
@@ -30,6 +31,7 @@ router.post("/auth", async (req, res) => {
   });
 
   if (user) {
+    const { username, name } = user;
     const creds = await db
       .collection("user_creds")
       .findOne({ userId: user._id });
@@ -39,11 +41,12 @@ router.post("/auth", async (req, res) => {
     );
 
     if (passwordMatch) {
-      req.session.username = user.username;
-      return res.status(200).send({ username: user.username, name: user.name });
+      res.cookie("waid-user", { username, name }, { expires, secure: true });
+      return res.status(200).send({ username, name });
     }
   }
 
+  res.clearCookie("waid-user");
   return res.status(403).json("Incorrect username or password");
 });
 
@@ -53,11 +56,9 @@ router.use(authMiddleware.session);
 router.param("username", authMiddleware.userWritable);
 
 router.get("/:username/guesses", async (req, res) => {
-  const { guesses } = await db
-    .collection("users")
-    .findOne({
-      username: req.session.username,
-    });
+  const { guesses } = await db.collection("users").findOne({
+    username: req.session.username,
+  });
 
   res.json(guesses);
 });
@@ -102,9 +103,10 @@ router.put(
         },
         {
           $set: {
-            "guesses.$.entries": entries.map(
-              ({ breedId, percentage }) => ({ breedId, percentage })
-            ),
+            "guesses.$.entries": entries.map(({ breedId, percentage }) => ({
+              breedId,
+              percentage,
+            })),
           },
         }
       );
