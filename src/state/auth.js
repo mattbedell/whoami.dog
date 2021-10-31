@@ -10,7 +10,7 @@ const placeholderState = { username: null, name: null };
 let initialState = decodeURIComponent(document.cookie)
   .split("; ")
   .find((row) => row.startsWith("waid-user"))
-  .replace(/^.*=j:/, '');
+  ?.replace(/^.*=j:/, '');
 
 if (initialState) {
   try {
