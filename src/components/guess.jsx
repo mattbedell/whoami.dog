@@ -18,6 +18,7 @@ import { useAuth } from "../state/auth.js";
 import { useGuessEntries, actions as guessActions } from "../state/guesses";
 import GuessPie from "./guessPie.jsx";
 import SearchBreeds from "./searchBreeds.jsx";
+import { BreedCard } from "./breed.jsx";
 
 const CustomSlider = styled(Slider)(() => ({
   "& .MuiSlider-mark": {
@@ -50,14 +51,7 @@ export const GuessEntry = ({
       onPointerEnter={onMouseEnter}
       onPointerLeave={onMouseLeave}
     >
-      <Card sx={{ display: "flex", flexDirection: "column" }}>
-        <CardMedia component="img" image={entry.imgSrc} />
-        <CardContent sx={{ flexGrow: 1 }}>
-          <Typography gutterBottom variant="h5" component="h2">
-            {entry.title}
-          </Typography>
-          {/* <Typography>{entry.summary}</Typography> */}
-        </CardContent>
+      <BreedCard breedId={entry.breedId}>
         <CardActions>
           <CustomSlider
             defaultValue={percentage}
@@ -70,7 +64,7 @@ export const GuessEntry = ({
             onPointerUp={onPointerUp}
           />
         </CardActions>
-      </Card>
+      </BreedCard>
     </Grid>
   );
 };
